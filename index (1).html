@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Florida Pawnbroker Transaction Form — Gold Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:       #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dim:   #7A6020;
+    --ink:        #0F0D0A;
+    --paper:      #F7F3EC;
+    --paper-warm: #EDE6D8;
+    --rule:       #C8B99A;
+    --rule-dark:  #8A7560;
+    --field-bg:   #FBF8F2;
+    --stamp-red:  #8B1A1A;
+    --text:       #1A160E;
+    --text-muted: #5A4E3C;
+    --print-border: 2px solid #000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #1C1610;
+    min-height: 100vh;
+    padding: 20px;
+    color: var(--text);
+  }
+
+  /* ── SCREEN WRAPPER ── */
+  .screen-shell {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── APP HEADER ── */
+  .app-header {
+    text-align: center;
+    padding: 28px 0 18px;
+    border-bottom: 1px solid var(--gold-dim);
+    margin-bottom: 24px;
+  }
+  .app-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--gold-light);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .app-header p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: #7A6838;
+    letter-spacing: 0.12em;
+    margin-top: 4px;
+  }
+
+  /* ── GOLD CALCULATOR PANEL ── */
+  .calc-panel {
+    background: linear-gradient(135deg, #1E1A10 0%, #231E12 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .calc-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .calc-panel h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold-light);
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .calc-panel h2::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .calc-field label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    color: #8A7848;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .calc-field input,
+  .calc-field select {
+    width: 100%;
+    background: #120F08;
+    border: 1px solid #3A3020;
+    border-radius: 3px;
+    color: var(--gold-light);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .calc-field input:focus,
+  .calc-field select:focus { border-color: var(--gold); }
+  .calc-field select option { background: #1C1610; }
+
+  .spot-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .spot-row input { flex: 1; }
+  .btn-fetch {
+    background: none;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-fetch:hover { background: var(--gold-dim); color: var(--gold-light); }
+  .btn-fetch.loading { opacity: 0.5; cursor: wait; }
+
+  /* results */
+  .calc-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    border-top: 1px solid #3A3020;
+    padding-top: 18px;
+  }
+  .result-box {
+    background: #0C0A06;
+    border: 1px solid #3A3020;
+    border-radius: 3px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  .result-box.highlight {
+    border-color: var(--gold-dim);
+    background: linear-gradient(135deg, #120F08, #1A1508);
+  }
+  .result-box label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    color: #6A5A38;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .result-box .value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    color: var(--gold-light);
+    font-weight: 500;
+  }
+  .result-box.highlight .value {
+    color: #F0D878;
+    font-size: 1.5rem;
+  }
+
+  .offer-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #2A2418;
+  }
+  .offer-row label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: #8A7848;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .offer-row input[type=range] {
+    flex: 1;
+    accent-color: var(--gold);
+    background: transparent;
+  }
+  .offer-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--gold);
+    font-size: 0.9rem;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .btn-fill {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    background: linear-gradient(135deg, #8A6A20, #B8922C);
+    border: none;
+    border-radius: 3px;
+    color: #0C0A06;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-fill:hover {
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    transform: translateY(-1px);
+  }
+
+  /* ── FORM DOCUMENT ── */
+  .form-doc {
+    background: var(--paper);
+    border: 1px solid var(--rule-dark);
+    border-radius: 2px;
+    padding: 36px 40px;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    font-size: 0.8rem;
+  }
+
+  /* watermark */
+  .form-doc::before {
+    content: 'FLORIDA';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%) rotate(-30deg);
+    font-family: 'Playfair Display', serif;
+    font-size: 8rem;
+    font-weight: 900;
+    color: rgba(180,150,60,0.05);
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 0.2em;
+    user-select: none;
+  }
+
+  .form-header-doc {
+    text-align: center;
+    border-bottom: 3px double #8A7560;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .form-header-doc .agency-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .form-header-doc h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .form-header-doc .sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+  .form-header-doc .statute {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--rule-dark);
+    margin-top: 6px;
+  }
+
+  /* top meta row */
+  .meta-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* sections */
+  .form-section {
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .section-title {
+    background: var(--paper-warm);
+    border-bottom: 1px solid var(--rule);
+    padding: 5px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .section-body {
+    padding: 14px 12px;
+  }
+
+  /* field rows */
+  .field-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .field-row:last-child { margin-bottom: 0; }
+
+  .f {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 100px;
+  }
+  .f.w2 { flex: 2; }
+  .f.w3 { flex: 3; }
+  .f.fixed80 { flex: 0 0 80px; }
+  .f.fixed100 { flex: 0 0 100px; }
+  .f.fixed120 { flex: 0 0 120px; }
+  .f.fixed150 { flex: 0 0 150px; }
+
+  .f label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    color: var(--rule-dark);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .f input,
+  .f select,
+  .f textarea {
+    background: var(--field-bg);
+    border: none;
+    border-bottom: 1.5px solid var(--rule);
+    padding: 4px 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+    border-radius: 0;
+  }
+  .f input:focus,
+  .f select:focus,
+  .f textarea:focus {
+    border-bottom-color: var(--gold);
+    background: #FFFEF8;
+  }
+  .f input.auto-filled {
+    color: #8B5A00;
+    font-weight: 500;
+    border-bottom-color: var(--gold-dim);
+  }
+  .f textarea {
+    resize: vertical;
+    min-height: 52px;
+    border: 1.5px solid var(--rule);
+    padding: 5px;
+  }
+  .f textarea:focus { border-color: var(--gold); }
+  .f select { background: var(--field-bg); cursor: pointer; }
+
+  /* type badges row */
+  .type-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .type-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    transition: all 0.15s;
+    background: var(--field-bg);
+    user-select: none;
+  }
+  .type-pill input { display: none; }
+  .type-pill.selected {
+    border-color: var(--gold-dim);
+    background: #F5EFD8;
+    color: var(--ink);
+  }
+
+  /* thumbprint box */
+  .thumb-box {
+    border: 1.5px dashed var(--rule);
+    border-radius: 2px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--rule-dark);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+    cursor: default;
+    flex-shrink: 0;
+  }
+  .thumb-box svg { opacity: 0.4; }
+
+  /* signature line */
+  .sig-section {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: end;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+  }
+  .sig-line {
+    border-bottom: 1.5px solid var(--ink);
+    height: 28px;
+    width: 100%;
+  }
+  .sig-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 3px;
+  }
+  .sig-x {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--ink);
+    padding-bottom: 4px;
+    align-self: end;
+  }
+
+  /* legal notice */
+  .legal-box {
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 10px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    margin-top: 14px;
+  }
+  .legal-box strong { color: var(--text); }
+
+  /* calculated value display in form */
+  .melt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #FBF0D4;
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    padding: 2px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: #8B6000;
+  }
+
+  /* action bar */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .btn-action {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 18px;
+    border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1.5px solid;
+    transition: all 0.2s;
+  }
+  .btn-print {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .btn-print:hover { background: #2A2015; }
+  .btn-clear {
+    background: transparent;
+    border-color: var(--rule-dark);
+    color: var(--text-muted);
+  }
+  .btn-clear:hover { border-color: var(--stamp-red); color: var(--stamp-red); }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: #1C1610;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold-light);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 12px 20px;
+    border-radius: 3px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body { background: white; padding: 0; }
+    .app-header, .calc-panel, .action-bar { display: none !important; }
+    .screen-shell { max-width: 100%; }
+    .form-doc {
+      border: none;
+      box-shadow: none;
+      padding: 20px;
+      font-size: 0.78rem;
+    }
+    .form-doc::before { display: none; }
+    .f input, .f select, .f textarea {
+      background: transparent;
+      border-bottom: 1px solid #999;
+    }
+    .f input.auto-filled { color: #000; }
+    .melt-badge { border: 1px solid #999; background: #f5f5f5; }
+    @page { margin: 0.6in; }
+  }
+
+  @media (max-width: 640px) {
+    .form-doc { padding: 20px 16px; }
+    .meta-row { grid-template-columns: 1fr; }
+    .f.fixed80, .f.fixed100, .f.fixed120, .f.fixed150 { flex: 1; min-width: 80px; }
+    .calc-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen-shell">
+
+  <!-- ── APP HEADER ── -->
+  <header class="app-header">
+    <h1>⚖ Gold Valuation &amp; Pawnbroker Transaction Form</h1>
+    <p>Florida Statute §538.03 &nbsp;|&nbsp; Regulated by FDLE &nbsp;|&nbsp; 24-Hour Hold Applies</p>
+  </header>
+
+  <!-- ── GOLD CALCULATOR ── -->
+  <section class="calc-panel">
+    <h2>Gold Calculator</h2>
+
+    <div class="calc-grid">
+      <div class="calc-field">
+        <label>Gold Spot Price ($/troy oz)</label>
+        <div class="spot-row">
+          <input type="number" id="spotPrice" placeholder="e.g. 3300.00" step="0.01" min="0" oninput="calculate()">
+          <button class="btn-fetch" id="fetchBtn" onclick="fetchSpotPrice()">⟳ Live</button>
+        </div>
+      </div>
+
+      <div class="calc-field">
+        <label>Weight</label>
+        <input type="number" id="weight" placeholder="0.00" step="0.001" min="0" oninput="calculate()">
+      </div>
+
+      <div class="calc-field">
+        <label>Weight Unit</label>
+        <select id="weightUnit" onchange="calculate()">
+          <option value="g">Grams (g)</option>
+          <option value="dwt">Pennyweight (dwt)</option>
+          <option value="oz">Troy Ounces (ozt)</option>
+          <option value="ozt">Avoirdupois oz</option>
+        </select>
+      </div>
+
+      <div class="calc-field">
+        <label>Karat</label>
+        <select id="karat" onchange="calculate()">
+          <option value="">— Select —</option>
+          <option value="24">24K — 99.9% Pure</option>
+          <option value="22">22K — 91.7% Pure</option>
+          <option value="18">18K — 75.0% Pure</option>
+          <option value="14">14K — 58.3% Pure</option>
+          <option value="10">10K — 41.7% Pure</option>
+          <option value="9">9K  — 37.5% Pure</option>
+          <option value="custom">Custom %</option>
+        </select>
+      </div>
+
+      <div class="calc-field" id="customPurityWrap" style="display:none">
+        <label>Purity % (custom)</label>
+        <input type="number" id="customPurity" placeholder="e.g. 58.3" step="0.1" min="0" max="100" oninput="calculate()">
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="calc-results">
+      <div class="result-box">
+        <label>Troy Oz (converted)</label>
+        <div class="value" id="rTroyOz">—</div>
+      </div>
+      <div class="result-box">
+        <label>Purity %</label>
+        <div class="value" id="rPurity">—</div>
+      </div>
+      <div class="result-box">
+        <label>Pure Gold Weight (ozt)</label>
+        <div class="value" id="rPureOz">—</div>
+      </div>
+      <div class="result-box highlight">
+        <label>Melt Value (100%)</label>
+        <div class="value" id="rMelt">$—</div>
+      </div>
+      <div class="result-box highlight">
+        <label>Offer Price</label>
+        <div class="value" id="rOffer">$—</div>
+      </div>
+    </div>
+
+    <div class="offer-row">
+      <label>Offer % of Melt</label>
+      <input type="range" id="offerPct" min="30" max="95" value="65" oninput="updateOffer()">
+      <span class="offer-pct" id="pctLabel">65%</span>
+    </div>
+
+    <button class="btn-fill" onclick="fillForm()">
+      ▼ &nbsp; Transfer Values to Transaction Form
+    </button>
+  </section>
+
+  <!-- ── TRANSACTION FORM ── -->
+  <div class="form-doc" id="printTarget">
+
+    <div class="form-header-doc">
+      <div class="agency-line">State of Florida &nbsp;—&nbsp; Department of Law Enforcement</div>
+      <h2>Secondhand Dealer / Pawnbroker Transaction Record</h2>
+      <div class="sub">REQUIRED FORM — Florida Statutes §538.03, §538.04, §538.06, §538.09</div>
+      <div class="statute">A copy of this record must be submitted to the local law enforcement agency within 24 hours of the transaction.</div>
+    </div>
+
+    <!-- Meta row: Store / Ticket / Date -->
+    <div class="meta-row">
+      <div class="f">
+        <label>Business / Store Name</label>
+        <input type="text" id="storeName" placeholder="Pawnbroker Business Name">
+      </div>
+      <div class="f">
+        <label>Pawn / Transaction #</label>
+        <input type="text" id="ticketNum" placeholder="PT-00001">
+      </div>
+      <div class="f">
+        <label>Date of Transaction</label>
+        <input type="date" id="txDate">
+      </div>
+    </div>
+
+    <!-- License / Agency -->
+    <div class="form-section">
+      <div class="section-title">§ 01 &nbsp; Dealer Information</div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="f w2">
+            <label>Dealer / Owner Name</label>
+            <input type="text" id="dealerName" placeholder="Licensed Dealer Name">
+          </div>
+          <div class="f">
+            <label>FL Pawnbroker License #</label>
+            <input type="text" id="licenseNum" placeholder="e.g. PB-2024-XXXXX">
+          </div>
+          <div class="f">
+            <label>Phone Number</label>
+            <input type="tel" id="dealerPhone" placeholder="(XXX) XXX-XXXX">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f w2">
+            <label>Business Address</label>
+            <input type="text" id="dealerAddr" placeholder="Street Address">
+          </div>
+          <div class="f">
+            <label>City</label>
+            <input type="text" id="dealerCity">
+          </div>
+          <div class="f fixed80">
+            <label>ZIP</label>
+            <input type="text" id="dealerZip" maxlength="10">
+          </div>
+          <div class="f fixed80">
+            <label>County</label>
+            <input type="text" id="dealerCounty">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Type -->
+    <div class="form-section">
+      <div class="section-title">§ 02 &nbsp; Transaction Type</div>
+      <div class="section-body">
+        <div class="type-pills" id="txTypePills">
+          <label class="type-pill selected"><input type="radio" name="txType" value="pawn" checked> PAWN (Pledged)</label>
+          <label class="type-pill"><input type="radio" name="txType" value="purchase"> PURCHASE (Outright Buy)</label>
+          <label class="type-pill"><input type="radio" name="txType" value="extension"> EXTENSION / RENEWAL</label>
+          <label class="type-pill"><input type="radio" name="txType" value="redemption"> REDEMPTION</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="form-section">
+      <div class="section-title">§ 03 &nbsp; Pledgor / Seller Information (Customer)</div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="f w2">
+            <label>Last Name</label>
+            <input type="text" id="custLast" placeholder="Last Name">
+          </div>
+          <div class="f w2">
+            <label>First Name</label>
+            <input type="text" id="custFirst" placeholder="First Name">
+          </div>
+          <div class="f">
+            <label>Middle Initial</label>
+            <input type="text" id="custMI" maxlength="3">
+          </div>
+          <div class="f">
+            <label>Suffix</label>
+            <select id="custSuffix">
+              <option value=""></option>
+              <option>Jr.</option><option>Sr.</option>
+              <option>II</option><option>III</option><option>IV</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f w3">
+            <label>Street Address</label>
+            <input type="text" id="custAddr" placeholder="Street Address">
+          </div>
+          <div class="f w2">
+            <label>City</label>
+            <input type="text" id="custCity">
+          </div>
+          <div class="f fixed80">
+            <label>State</label>
+            <input type="text" id="custState" value="FL" maxlength="2">
+          </div>
+          <div class="f fixed100">
+            <label>ZIP Code</label>
+            <input type="text" id="custZip" maxlength="10">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f fixed150">
+            <label>Date of Birth</label>
+            <input type="date" id="custDOB">
+          </div>
+          <div class="f">
+            <label>Phone Number</label>
+            <input type="tel" id="custPhone" placeholder="(XXX) XXX-XXXX">
+          </div>
+          <div class="f">
+            <label>Sex</label>
+            <select id="custSex">
+              <option value="">—</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other / Unknown</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Race</label>
+            <select id="custRace">
+              <option value="">—</option>
+              <option>White / Caucasian</option>
+              <option>Black / African American</option>
+              <option>Hispanic / Latino</option>
+              <option>Asian / Pacific Islander</option>
+              <option>American Indian / Alaska Native</option>
+              <option>Other</option>
+              <option>Unknown</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f fixed80">
+            <label>Height</label>
+            <input type="text" id="custHeight" placeholder="5'10&quot;">
+          </div>
+          <div class="f fixed80">
+            <label>Weight (lbs)</label>
+            <input type="text" id="custWeight" placeholder="180">
+          </div>
+          <div class="f">
+            <label>Eye Color</label>
+            <select id="custEyes">
+              <option value="">—</option>
+              <option>Brown</option><option>Blue</option><option>Green</option>
+              <option>Hazel</option><option>Gray</option><option>Other</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Hair Color</label>
+            <select id="custHair">
+              <option value="">—</option>
+              <option>Black</option><option>Brown</option><option>Blonde</option>
+              <option>Red</option><option>Gray</option><option>White</option>
+              <option>Bald</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f">
+            <label>ID Type</label>
+            <select id="idType">
+              <option value="">— Select ID Type —</option>
+              <option>Florida Driver's License</option>
+              <option>Florida State ID</option>
+              <option>Out-of-State Driver's License</option>
+              <option>U.S. Passport</option>
+              <option>U.S. Military ID</option>
+              <option>U.S. Permanent Resident Card</option>
+              <option>Consular ID / Matricula</option>
+              <option>Other Government-Issued Photo ID</option>
+            </select>
+          </div>
+          <div class="f w2">
+            <label>ID Number</label>
+            <input type="text" id="idNumber" placeholder="ID / License Number">
+          </div>
+          <div class="f fixed80">
+            <label>ID State</label>
+            <input type="text" id="idState" value="FL" maxlength="2">
+          </div>
+          <div class="f fixed120">
+            <label>ID Expiration Date</label>
+            <input type="date" id="idExpiry">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item Description -->
+    <div class="form-section">
+      <div class="section-title">§ 04 &nbsp; Item Description (Gold / Precious Metal)</div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="f w3">
+            <label>Item Description</label>
+            <input type="text" id="itemDesc" placeholder="e.g. Gold necklace, rope chain, yellow gold">
+          </div>
+          <div class="f">
+            <label>Type / Category</label>
+            <select id="itemType">
+              <option value="">— Type —</option>
+              <option>Necklace</option>
+              <option>Bracelet</option>
+              <option>Ring</option>
+              <option>Earrings (pair)</option>
+              <option>Pendant / Charm</option>
+              <option>Watch</option>
+              <option>Coin(s)</option>
+              <option>Bar / Bullion</option>
+              <option>Scrap Gold</option>
+              <option>Other Jewelry</option>
+            </select>
+          </div>
+          <div class="f fixed80">
+            <label>Quantity</label>
+            <input type="number" id="itemQty" value="1" min="1">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f">
+            <label>Metal Color</label>
+            <select id="metalColor">
+              <option>Yellow Gold</option>
+              <option>White Gold</option>
+              <option>Rose Gold</option>
+              <option>Two-Tone</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Hallmark / Stamp</label>
+            <input type="text" id="hallmark" placeholder="e.g. 585, 750, 14K, 18K">
+          </div>
+          <div class="f">
+            <label>Maker / Brand</label>
+            <input type="text" id="itemBrand" placeholder="(if identifiable)">
+          </div>
+          <div class="f w2">
+            <label>Serial / Engraving (if any)</label>
+            <input type="text" id="itemSerial" placeholder="None / N/A if not present">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f">
+            <label>Karat (verified)</label>
+            <input type="text" id="fKarat" placeholder="e.g. 14K" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Purity %</label>
+            <input type="text" id="fPurity" placeholder="e.g. 58.3%" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Weight (grams)</label>
+            <input type="text" id="fWeightG" placeholder="e.g. 12.50 g" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Weight (troy oz)</label>
+            <input type="text" id="fWeightOzt" placeholder="e.g. 0.402 ozt" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Gold Spot Price Used</label>
+            <input type="text" id="fSpot" placeholder="e.g. $3,300.00/ozt" class="auto-filled">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f w2">
+            <label>Additional Notes / Condition</label>
+            <textarea id="itemNotes" placeholder="Condition, damage, stones, clasps, notable features…"></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:flex-end;padding-bottom:2px;">
+            <div id="meltBadge" class="melt-badge" style="display:none">
+              <span>Melt Value:</span>
+              <strong id="meltBadgeVal">—</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Terms -->
+    <div class="form-section">
+      <div class="section-title">§ 05 &nbsp; Financial Terms</div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="f">
+            <label>Gold Melt Value ($)</label>
+            <input type="text" id="fMeltVal" placeholder="Calculated melt value" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Loan / Purchase Amount ($)</label>
+            <input type="text" id="fOfferAmt" placeholder="Amount offered / paid" class="auto-filled">
+          </div>
+          <div class="f">
+            <label>Interest Rate (monthly %)</label>
+            <input type="text" id="fInterest" placeholder="e.g. 25% (max per FL law)">
+          </div>
+          <div class="f">
+            <label>Service / Storage Fee ($)</label>
+            <input type="text" id="fFee" placeholder="e.g. 5.00">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f">
+            <label>Maturity / Due Date</label>
+            <input type="date" id="fDueDate">
+          </div>
+          <div class="f">
+            <label>Total Amount Due at Redemption ($)</label>
+            <input type="text" id="fTotalDue" placeholder="Loan + interest + fees">
+          </div>
+          <div class="f w2">
+            <label>Payment Method</label>
+            <select id="fPayMethod">
+              <option value="">—</option>
+              <option>Cash</option>
+              <option>Check</option>
+              <option>Money Order</option>
+              <option>Electronic Transfer</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="form-section">
+      <div class="section-title">§ 06 &nbsp; Attestation &amp; Signatures</div>
+      <div class="section-body">
+
+        <div class="legal-box">
+          <strong>Pledgor / Seller Statement (Florida Statute §538.09):</strong> I hereby declare that I am the legal owner of the item(s) listed above, or that I have the right to sell or pledge said item(s). I understand that a report of this transaction will be filed with local law enforcement. I understand that willful false statements constitute a criminal violation under Florida law. I consent to fingerprinting as required by §538.04(1)(h), F.S.
+        </div>
+
+        <div style="display:flex;gap:20px;align-items:flex-start;margin-top:16px;flex-wrap:wrap;">
+          <div style="flex:1">
+            <div class="sig-section">
+              <div>
+                <div class="sig-line"></div>
+                <div class="sig-label">Pledgor / Seller Signature</div>
+              </div>
+              <div class="sig-x">✕</div>
+              <div>
+                <div class="sig-line"></div>
+                <div class="sig-label">Date</div>
+              </div>
+            </div>
+            <div class="sig-section" style="margin-top:14px">
+              <div>
+                <div class="sig-line"></div>
+                <div class="sig-label">Dealer / Employee Signature</div>
+              </div>
+              <div class="sig-x">✕</div>
+              <div>
+                <div class="sig-line"></div>
+                <div class="sig-label">Date</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="thumb-box">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2C8.5 2 6 5 6 8.5c0 2 .8 3.5 2 5l1 8h6l1-8c1.2-1.5 2-3 2-5C18 5 15.5 2 12 2z"/>
+              </svg>
+              Right<br>Thumbprint
+            </div>
+          </div>
+        </div>
+
+        <div class="legal-box" style="margin-top:14px;">
+          <strong>Notice to Customer:</strong> This pawn ticket is your receipt. Keep it to redeem your item(s). Items not redeemed by the maturity date may be sold after proper notice per §538.06, F.S. Maximum interest rate is governed by §538.05, F.S. You have <strong>30 days</strong> after maturity to redeem before the pawnbroker acquires title. Report stolen property to local law enforcement; call 1-800-FL-AWARD.
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Officer use -->
+    <div class="form-section">
+      <div class="section-title">§ 07 &nbsp; Law Enforcement Use Only</div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="f">
+            <label>Agency Received By</label>
+            <input type="text">
+          </div>
+          <div class="f">
+            <label>Date / Time Received</label>
+            <input type="datetime-local">
+          </div>
+          <div class="f">
+            <label>Case / Report Number</label>
+            <input type="text">
+          </div>
+          <div class="f">
+            <label>Officer Badge #</label>
+            <input type="text">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="f w3">
+            <label>Hold / Restriction Notes</label>
+            <input type="text" placeholder="e.g. 10-day hold placed / cleared / linked to case #">
+          </div>
+          <div class="f">
+            <label>Disposition</label>
+            <select>
+              <option value="">—</option>
+              <option>Cleared — No Hold</option>
+              <option>Hold Placed</option>
+              <option>Evidence Seized</option>
+              <option>Returned to Owner</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /form-doc -->
+
+  <div class="action-bar">
+    <button class="btn-action btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+    <button class="btn-action btn-clear" onclick="clearForm()">✕ Clear Form</button>
+  </div>
+
+</div><!-- /screen-shell -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──
+const TROY_OZ_PER_GRAM = 1 / 31.1035;
+const GRAMS_PER_DWT    = 1.55517;
+const GRAMS_PER_AVOZ   = 28.3495;
+
+const KARAT_PURITY = {
+  '24': 99.99, '22': 91.67, '18': 75.00,
+  '14': 58.33, '10': 41.67,  '9': 37.50
+};
+
+let meltValue  = 0;
+let offerValue = 0;
+let weightGrams = 0;
+let weightTroyOz = 0;
+
+// ── SET TODAY'S DATE ──
+document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+
+// ── RADIO PILLS ──
+document.querySelectorAll('.type-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
+    pill.classList.add('selected');
+  });
+});
+
+// ── KARAT CUSTOM TOGGLE ──
+document.getElementById('karat').addEventListener('change', function() {
+  const wrap = document.getElementById('customPurityWrap');
+  wrap.style.display = this.value === 'custom' ? 'block' : 'none';
+  calculate();
+});
+
+// ── CALCULATE ──
+function calculate() {
+  const spot   = parseFloat(document.getElementById('spotPrice').value) || 0;
+  const wt     = parseFloat(document.getElementById('weight').value)    || 0;
+  const unit   = document.getElementById('weightUnit').value;
+  const karat  = document.getElementById('karat').value;
+
+  // Convert to grams
+  let grams = 0;
+  if (unit === 'g')   grams = wt;
+  if (unit === 'dwt') grams = wt * GRAMS_PER_DWT;
+  if (unit === 'oz')  grams = wt * 31.1035;   // troy oz → grams
+  if (unit === 'ozt') grams = wt * GRAMS_PER_AVOZ;
+
+  weightGrams = grams;
+  weightTroyOz = grams * TROY_OZ_PER_GRAM;
+
+  // Purity
+  let purity = 0;
+  if (karat === 'custom') {
+    purity = parseFloat(document.getElementById('customPurity').value) || 0;
+  } else if (karat) {
+    purity = KARAT_PURITY[karat];
+  }
+
+  const pureOz = weightTroyOz * (purity / 100);
+  meltValue = spot * pureOz;
+
+  // Display
+  document.getElementById('rTroyOz').textContent = weightTroyOz > 0 ? weightTroyOz.toFixed(4) + ' ozt' : '—';
+  document.getElementById('rPurity').textContent  = purity > 0 ? purity.toFixed(2) + '%' : '—';
+  document.getElementById('rPureOz').textContent  = pureOz > 0 ? pureOz.toFixed(4) + ' ozt' : '—';
+  document.getElementById('rMelt').textContent    = meltValue > 0 ? '$' + meltValue.toFixed(2) : '$—';
+
+  updateOffer();
+}
+
+function updateOffer() {
+  const pct = parseInt(document.getElementById('offerPct').value);
+  document.getElementById('pctLabel').textContent = pct + '%';
+  offerValue = meltValue * (pct / 100);
+  document.getElementById('rOffer').textContent = offerValue > 0 ? '$' + offerValue.toFixed(2) : '$—';
+}
+
+// ── LIVE SPOT PRICE ──
+async function fetchSpotPrice() {
+  const btn = document.getElementById('fetchBtn');
+  btn.classList.add('loading');
+  btn.textContent = '…';
+
+  try {
+    // Try metals.live first (no key needed)
+    const r = await fetch('https://api.metals.live/v1/spot/gold', { mode: 'cors' });
+    if (!r.ok) throw new Error('non-200');
+    const data = await r.json();
+    const price = data[0]?.price || data?.price || null;
+    if (price) {
+      document.getElementById('spotPrice').value = parseFloat(price).toFixed(2);
+      showToast('✓ Live spot price loaded: $' + parseFloat(price).toFixed(2) + '/ozt');
+      calculate();
+    } else throw new Error('no price field');
+  } catch {
+    showToast('⚠ Could not fetch live price — enter manually.');
+  }
+
+  btn.classList.remove('loading');
+  btn.textContent = '⟳ Live';
+}
+
+// ── FILL FORM ──
+function fillForm() {
+  const karat  = document.getElementById('karat').value;
+  const spot   = parseFloat(document.getElementById('spotPrice').value) || 0;
+
+  const kLabel = karat === 'custom'
+    ? document.getElementById('customPurity').value + '% (custom)'
+    : karat ? karat + 'K' : '';
+
+  const purity = karat === 'custom'
+    ? (parseFloat(document.getElementById('customPurity').value) || 0).toFixed(2)
+    : karat ? KARAT_PURITY[karat].toFixed(2) : '';
+
+  setField('fKarat',    kLabel);
+  setField('fPurity',   purity ? purity + '%' : '');
+  setField('fWeightG',  weightGrams > 0  ? weightGrams.toFixed(4) + ' g' : '');
+  setField('fWeightOzt',weightTroyOz > 0 ? weightTroyOz.toFixed(4) + ' ozt' : '');
+  setField('fSpot',     spot > 0 ? '$' + spot.toLocaleString('en-US', {minimumFractionDigits:2}) + '/ozt' : '');
+  setField('fMeltVal',  meltValue > 0  ? '$' + meltValue.toFixed(2) : '');
+  setField('fOfferAmt', offerValue > 0 ? '$' + offerValue.toFixed(2) : '');
+
+  // Hallmark
+  if (karat && karat !== 'custom') {
+    const hallmark = document.getElementById('hallmark');
+    if (!hallmark.value) hallmark.value = karat + 'K';
+  }
+
+  // Melt badge in form
+  if (meltValue > 0) {
+    document.getElementById('meltBadge').style.display = 'inline-flex';
+    document.getElementById('meltBadgeVal').textContent = '$' + meltValue.toFixed(2);
+  }
+
+  // Scroll to form
+  document.getElementById('printTarget').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast('✓ Values transferred to transaction form');
+}
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.value = val;
+    el.classList.add('auto-filled');
+  }
+}
+
+// ── CLEAR FORM ──
+function clearForm() {
+  if (!confirm('Clear all form fields?')) return;
+  document.querySelectorAll('.form-doc input[type=text], .form-doc input[type=tel], .form-doc input[type=number], .form-doc input[type=date], .form-doc input[type=datetime-local], .form-doc textarea, .form-doc select').forEach(el => {
+    el.value = '';
+    el.classList.remove('auto-filled');
+  });
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('custState').value = 'FL';
+  document.getElementById('idState').value = 'FL';
+  document.getElementById('meltBadge').style.display = 'none';
+  showToast('Form cleared');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
